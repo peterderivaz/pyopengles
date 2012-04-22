@@ -1,0 +1,20 @@
+Raspberry Pi 3d demo.
+
+This uses the EGL and OpenGLES libraries to draw 3d graphics from inside Python with hardware acceleration.
+
+USAGE
+
+EXAMPLE A) Draw a rectangle
+
+python -i pyopengles.py
+Press ctrl-D to quite Python and close the display
+
+EXAMPLE B) Use standard OpenGLES commands
+
+from pyopengles import *
+egl = EGL()
+# Normal OpenGLES commands
+opengles.glClearColor ( eglfloat(0.0), eglfloat(1.0), eglfloat(1.0), eglfloat(1.0) );
+opengles.glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+# Send this to make the graphics drawn visible
+openegl.eglSwapBuffers(egl.display, egl.surface)
