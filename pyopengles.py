@@ -10,10 +10,12 @@
 
 import ctypes
 import time
+import math
 # Pick up our constants extracted from the header files with prepare_constants.py
 from egl import *
 from gl2 import *
 from gl2ext import *
+import pymouse
 
 # Define verbose=True to get debug messages
 verbose = True
@@ -125,15 +127,15 @@ class demo():
         print log.value
             
     def __init__(self):
-        self.vertex_data = eglfloats((0.0,0.0,0.5,1.0,
-                         1.0,0.0,0.5,1.0,
-                         1.0,1.0,0.5,1.0,
-                         0.0,1.0,0.5,1.0))
+        self.vertex_data = eglfloats((-1.0,-1.0,1.0,1.0,
+                         1.0,-1.0,1.0,1.0,
+                         1.0,1.0,1.0,1.0,
+                         -1.0,1.0,1.0,1.0))
         self.vshader_source = ctypes.c_char_p(
               "attribute vec4 vertex;"
               "void main(void) {"
               "  vec4 pos = vertex;"
-              "  pos.xy*=0.3;"
+              "  pos.xy*=0.9;"
               "  gl_Position = pos;"
               "}")
       
@@ -142,6 +144,83 @@ class demo():
               "void main(void) {"
               "   gl_FragColor = color;"
               "}")
+
+        # Mandelbrot
+        self.fshader_source = ctypes.c_char_p("""
+	uniform vec4 color;
+	uniform vec2 scale;
+	void main(void) {
+		float intensity;
+		vec4 color2;
+		float cr=(gl_FragCoord.x-810.0)*scale.x; //0.0005;
+		float ci=(gl_FragCoord.y-540.0)*scale.y; //0.0005;
+
+		float ar=cr;
+		float ai=ci;
+
+		float tr,ti;
+		float col=0.0;
+                float p=0.0;
+                int i=0;
+                int j=0;
+                
+                for(int i2=1;i2<16;i2++)
+                {
+                        tr=ar*ar-ai*ai+cr;
+                        ti=2.0*ar*ai+ci;
+                        p=tr*tr+ti*ti;
+                        ar=tr;
+                        ai=ti;
+                        if (p>16.0)
+                        {
+                          i=i2;
+                          break;
+                        }
+                }
+
+                col=float(j)*(0.005);
+	        color2 = vec4(float(i)*0.0625,col,0,1);
+		gl_FragColor = color2;
+	}""")
+
+        # Julia
+        self.fshader_source = ctypes.c_char_p("""
+	uniform vec4 color;
+	uniform vec2 scale;
+	uniform vec2 offset;
+	void main(void) {
+		float intensity;
+		vec4 color2;
+		float ar=(gl_FragCoord.x-810.0)*scale.x;
+		float ai=(gl_FragCoord.y-540.0)*scale.y;
+
+		float cr=(offset.x-810.0)*scale.x;;
+		float ci=(offset.y-540.0)*scale.y;
+
+		float tr,ti;
+		float col=0.0;
+                float p=0.0;
+                int i=0;
+                int j=0;
+                
+                for(int i2=1;i2<16;i2++)
+                {
+                        tr=ar*ar-ai*ai+cr;
+                        ti=2.0*ar*ai+ci;
+                        p=tr*tr+ti*ti;
+                        ar=tr;
+                        ai=ti;
+                        if (p>16.0)
+                        {
+                          i=i2;
+                          break;
+                        }
+                }
+
+                col=float(j)*(0.005);
+	        color2 = vec4(float(i)*0.0625,col,0,1);
+		gl_FragColor = color2;
+	}""")
 
         vshader = opengles.glCreateShader(GL_VERTEX_SHADER);
         opengles.glShaderSource(vshader, 1, ctypes.byref(self.vshader_source), 0)
@@ -168,13 +247,15 @@ class demo():
         self.program = program
         self.unif_color = opengles.glGetUniformLocation(program, "color");
         self.attr_vertex = opengles.glGetAttribLocation(program, "vertex");
+        self.unif_scale = opengles.glGetUniformLocation(program, "scale");
+        self.unif_offset = opengles.glGetUniformLocation(program, "offset");
    
         opengles.glClearColor ( eglfloat(0.0), eglfloat(1.0), eglfloat(1.0), eglfloat(1.0) );
         
         self.buf=eglint()
         opengles.glGenBuffers(1,ctypes.byref(self.buf))
 
-    def draw_triangles(self):
+    def draw_triangles(self,scale=0.0005,offset=(0.2,0.3)):
         opengles.glViewport ( 0, 0, egl.width, egl.height );
        
         opengles.glUseProgram ( self.program );
@@ -186,11 +267,13 @@ class demo():
         opengles.glEnableVertexAttribArray(self.attr_vertex);
        
         opengles.glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        #opengles.glClear(GL_COLOR_BUFFER_BIT);
-        #opengles.glClear(GL_DEPTH_BUFFER_BIT);
         opengles.glUniform4f(self.unif_color, eglfloat(0.5), eglfloat(0.5), eglfloat(0.8), eglfloat(1.0));
+        opengles.glUniform2f(self.unif_scale, eglfloat(scale), eglfloat(scale));
+        opengles.glUniform2f(self.unif_offset, eglfloat(offset[0]), eglfloat(offset[1]));
         opengles.glDrawArrays ( GL_TRIANGLE_FAN, 0, 4 );
         opengles.glBindBuffer(GL_ARRAY_BUFFER, 0);
+        opengles.glFlush()
+        opengles.glFinish()
 
         openegl.eglSwapBuffers(egl.display, egl.surface);
 
@@ -202,7 +285,17 @@ def showerror():
 if __name__ == "__main__":
     egl = EGL()
     d = demo()
-    d.draw_triangles()
+    m=pymouse.start_mouse()
+    while 1:
+        d.draw_triangles(0.003,(m.x,m.y))
+        time.sleep(0.01)
     showerror()
+
+def c():
+    for i in range(100):
+        print i
+        t0=time.time()
+        d.draw_triangles(0.003*math.cos(i*0.01))
+        print time.time()-t0
         
     
