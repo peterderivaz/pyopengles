@@ -12,6 +12,7 @@ class MouseThread ( threading.Thread ):
         self.y = 400
         self.height=1080
         self.width=1920
+        self.finished=False
         
     def run ( self ):
         while 1:
@@ -20,6 +21,9 @@ class MouseThread ( threading.Thread ):
                 if buttons&8:
                     break # This bit should always be set
                 self.fd.read(1) # Try to sync up again
+            if buttons&3:
+                self.finished=True
+                break  # Stop if mouse button pressed!
             if buttons&XSIGN:
                 dx-=256
             if buttons&YSIGN:
@@ -29,7 +33,7 @@ class MouseThread ( threading.Thread ):
             if self.x<0: self.x=0
             if self.y<0: self.y=0
             self.x=min(self.x,self.width)
-            self.y=min(self.x,self.height)
+            self.y=min(self.y,self.height)
             print self.x,self.y
 
 def start_mouse():
