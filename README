@@ -7,7 +7,10 @@ USAGE
 EXAMPLE A) Draw a Mandelbrot.  Use mouse to scroll and view Julia sets.  Press mouse button to quit.
 
 python -i pyopengles.py
-Press ctrl-D to quite Python and close the display
+Press ctrl-D to quit Python and close the display
+
+(If nothing appears on the screen make sure you have at least 64megabytes allocated for the GPU.)
+
 
 EXAMPLE B) Use standard OpenGLES commands
 
@@ -18,3 +21,9 @@ opengles.glClearColor ( eglfloat(0.0), eglfloat(1.0), eglfloat(1.0), eglfloat(1.
 opengles.glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 # Send this to make the graphics drawn visible
 openegl.eglSwapBuffers(egl.display, egl.surface)
+
+
+
+EXAMPLE C) Draw a rotating coloured cone on the screen.  Press mouse button to quit.
+
+python cone.py

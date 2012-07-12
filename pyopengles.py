@@ -55,7 +55,7 @@ def check(e):
 
 class EGL(object):
 
-    def __init__(self):
+    def __init__(self,depthbuffer=False):
         """Opens up the OpenGL library and prepares a window for display"""
         b = bcm.bcm_host_init()
         assert b==0
@@ -63,12 +63,24 @@ class EGL(object):
         assert self.display
         r = openegl.eglInitialize(self.display,0,0)
         assert r
-        attribute_list = eglints(     (EGL_RED_SIZE, 8,
+        if depthbuffer:
+            attribute_list = eglints(     (EGL_RED_SIZE, 8,
+                                      EGL_GREEN_SIZE, 8,
+                                      EGL_BLUE_SIZE, 8,
+                                      EGL_ALPHA_SIZE, 8,
+                                      EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+                                      EGL_DEPTH_SIZE, 16,
+                                      EGL_NONE) )
+        else:
+            attribute_list = eglints(     (EGL_RED_SIZE, 8,
                                       EGL_GREEN_SIZE, 8,
                                       EGL_BLUE_SIZE, 8,
                                       EGL_ALPHA_SIZE, 8,
                                       EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
                                       EGL_NONE) )
+        # EGL_SAMPLE_BUFFERS,  1,
+        # EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
+                                                                    
         numconfig = eglint()
         config = ctypes.c_void_p()
         r = openegl.eglChooseConfig(self.display,
@@ -122,7 +134,7 @@ class demo():
         print log.value
 
     def showprogramlog(self,shader):
-        """Prints the compile log for a shader"""
+        """Prints the compile log for a program"""
         N=1024
         log=(ctypes.c_char*N)()
         loglen=ctypes.c_int()
